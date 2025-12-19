@@ -25,6 +25,10 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 8px;
+      
+      -webkit-touch-callout: none;
+    user-select: none;
+      
     }
     .gallery img {
       width: 100%;
@@ -137,10 +141,21 @@ fetch('images.json?v=' + Date.now())
   let pressTimer = null;
   let longPress = false;
 
-  // LONG TAP → DOWNLOAD
-  img.addEventListener('touchstart', () => {
+  let startX = 0, startY = 0;
+  let moved = false;
+  const MOVE_THRESHOLD = 12; // px (можно 10–16)
+
+  // TOUCH START
+  img.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    moved = false;
     longPress = false;
+
     pressTimer = setTimeout(() => {
+      // Если уже начали скроллить — не скачиваем
+      if (moved) return;
       longPress = true;
 
       const a = document.createElement('a');
@@ -149,18 +164,33 @@ fetch('images.json?v=' + Date.now())
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    }, 600); // 600ms = long tap
-  });
+    }, 600);
+  }, { passive: true });
 
+  // TOUCH MOVE (scroll/swipe) — отменяем
+  img.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    const dx = Math.abs(t.clientX - startX);
+    const dy = Math.abs(t.clientY - startY);
+
+    if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
+      moved = true;
+      clearTimeout(pressTimer);
+    }
+  }, { passive: true });
+
+  // TOUCH END
   img.addEventListener('touchend', () => {
     clearTimeout(pressTimer);
-    if (!longPress) {
-      openPreview(src); // обычный tap
-    }
-  });
 
-  img.addEventListener('touchmove', () => {
-    clearTimeout(pressTimer);
+    // Если был long press — ничего не делаем (уже скачали)
+    if (longPress) return;
+
+    // Если это был скролл/свайп — НЕ открываем превью
+    if (moved) return;
+
+    // Иначе это обычный tap → превью
+    openPreview(src);
   });
 
   // DESKTOP CLICK → PREVIEW
