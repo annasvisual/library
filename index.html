@@ -131,19 +131,21 @@ fetch('images.json?v=' + Date.now())
     });
 
     images.forEach(filename => {
-  const src = 'images/' + filename;
+  const thumbSrc = 'thumbs/' + filename;
+  const fullSrc  = 'images/' + filename;
 
   const img = document.createElement('img');
-  img.src = src;
+  img.src = thumbSrc;
   img.alt = 'AI mobile wallpaper';
   img.loading = 'lazy';
+  img.decoding = 'async';
 
   let pressTimer = null;
   let longPress = false;
 
   let startX = 0, startY = 0;
   let moved = false;
-  const MOVE_THRESHOLD = 12; // px (можно 10–16)
+  const MOVE_THRESHOLD = 12;
 
   // TOUCH START
   img.addEventListener('touchstart', (e) => {
@@ -154,12 +156,11 @@ fetch('images.json?v=' + Date.now())
     longPress = false;
 
     pressTimer = setTimeout(() => {
-      // Если уже начали скроллить — не скачиваем
       if (moved) return;
       longPress = true;
 
       const a = document.createElement('a');
-      a.href = src;
+      a.href = fullSrc;           // ⬅️ скачиваем FULL
       a.download = filename;
       document.body.appendChild(a);
       a.click();
@@ -167,7 +168,7 @@ fetch('images.json?v=' + Date.now())
     }, 600);
   }, { passive: true });
 
-  // TOUCH MOVE (scroll/swipe) — отменяем
+  // TOUCH MOVE (scroll/swipe)
   img.addEventListener('touchmove', (e) => {
     const t = e.touches[0];
     const dx = Math.abs(t.clientX - startX);
@@ -183,18 +184,14 @@ fetch('images.json?v=' + Date.now())
   img.addEventListener('touchend', () => {
     clearTimeout(pressTimer);
 
-    // Если был long press — ничего не делаем (уже скачали)
     if (longPress) return;
-
-    // Если это был скролл/свайп — НЕ открываем превью
     if (moved) return;
 
-    // Иначе это обычный tap → превью
-    openPreview(src);
+    openPreview(fullSrc); // ⬅️ preview = FULL
   });
 
-  // DESKTOP CLICK → PREVIEW
-  img.addEventListener('click', () => openPreview(src));
+  // DESKTOP CLICK
+  img.addEventListener('click', () => openPreview(fullSrc));
 
   gallery.appendChild(img);
 });
