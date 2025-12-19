@@ -59,6 +59,9 @@ Download freely and enjoy.
 fetch('images.json?v=' + Date.now())
   .then(response => response.json())
   .then(images => {
+    
+     images.reverse();
+    
     const gallery = document.getElementById('gallery');
 
     images.forEach(filename => {
