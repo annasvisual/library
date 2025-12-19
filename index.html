@@ -37,6 +37,39 @@
       font-size: 14px;
       opacity: 0.8;
     }
+    .lightbox{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9999;
+}
+.lightbox.open{ display: flex; }
+
+.lightbox img{
+  max-width: 95vw;
+  max-height: 90vh;
+  border-radius: 12px;
+}
+
+.lightbox .close{
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.gallery img{ cursor: zoom-in; }
   </style>
 </head>
 <body>
@@ -55,27 +88,86 @@ Download freely and enjoy.
   
 <div class="gallery" id="gallery"></div>
 
+  <div class="lightbox" id="lightbox">
+  <button class="close" id="closeBtn" aria-label="Close">×</button>
+  <img id="lightboxImg" alt="Wallpaper preview">
+</div>
+
+
 <script>
 fetch('images.json?v=' + Date.now())
-  .then(response => response.json())
+  .then(r => r.json())
   .then(images => {
-    
-     images.reverse();
-    
+
+    images.reverse(); // последние сверху
+
     const gallery = document.getElementById('gallery');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    const closeBtn = document.getElementById('closeBtn');
+
+    function openPreview(src){
+      lightboxImg.src = src;
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden'; // важно для мобилы
+    }
+
+    function closePreview(){
+      lightbox.classList.remove('open');
+      lightboxImg.src = '';
+      document.body.style.overflow = '';
+    }
+
+    closeBtn.addEventListener('click', closePreview);
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closePreview();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closePreview();
+    });
 
     images.forEach(filename => {
-      const link = document.createElement('a');
-      link.href = 'images/' + filename;
-      link.download = '';
+  const src = 'images/' + filename;
 
-      const img = document.createElement('img');
-      img.src = 'images/' + filename;
-      img.alt = 'AI mobile wallpaper';
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = 'AI mobile wallpaper';
+  img.loading = 'lazy';
 
-      link.appendChild(img);
-      gallery.appendChild(link);
-    });
+  let pressTimer = null;
+  let longPress = false;
+
+  // LONG TAP → DOWNLOAD
+  img.addEventListener('touchstart', () => {
+    longPress = false;
+    pressTimer = setTimeout(() => {
+      longPress = true;
+
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }, 600); // 600ms = long tap
+  });
+
+  img.addEventListener('touchend', () => {
+    clearTimeout(pressTimer);
+    if (!longPress) {
+      openPreview(src); // обычный tap
+    }
+  });
+
+  img.addEventListener('touchmove', () => {
+    clearTimeout(pressTimer);
+  });
+
+  // DESKTOP CLICK → PREVIEW
+  img.addEventListener('click', () => openPreview(src));
+
+  gallery.appendChild(img);
+});
   });
 </script>
 
