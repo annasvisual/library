@@ -34,6 +34,9 @@
       width: 100%;
       height: auto;
       border-radius: 10px;
+      background:#eee;          /* плейсхолдер */
+      aspect-ratio: 9 / 16;     /* важно: резервируем место */
+      object-fit: cover;
     }
     .support {
       margin-top: 30px;
@@ -109,7 +112,20 @@ fetch('images.json?v=' + Date.now())
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightboxImg');
     const closeBtn = document.getElementById('closeBtn');
+    
+const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
 
+        const img = entry.target;
+        const src = img.dataset.src;
+        if (!src) return;
+
+        img.src = src;      // старт загрузки
+        io.unobserve(img);
+      });
+    }, { rootMargin: '600px 0px' });
+    
     function openPreview(src){
       lightboxImg.src = src;
       lightbox.classList.add('open');
@@ -135,10 +151,12 @@ fetch('images.json?v=' + Date.now())
   const fullSrc  = 'images/' + filename;
 
   const img = document.createElement('img');
-  img.src = thumbSrc;
+  img.dataset.src = thumbSrc;
   img.alt = 'AI mobile wallpaper';
   img.loading = 'lazy';
   img.decoding = 'async';
+
+  io.observe(img);
 
   let pressTimer = null;
   let longPress = false;
