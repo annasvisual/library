@@ -46,9 +46,28 @@ Anna’s Open Visual Library — a curated collection of free AI-generated and o
 Download freely and enjoy.
 </p>
 
-<div class="gallery">
-   <!-- Images will go here -->
-</div>
+<div class="gallery" id="gallery"></div>
+
+<script>
+fetch('images.json')
+  .then(response => response.json())
+  .then(images => {
+    const gallery = document.getElementById('gallery');
+
+    images.forEach(filename => {
+      const link = document.createElement('a');
+      link.href = 'images/' + filename;
+      link.download = '';
+
+      const img = document.createElement('img');
+      img.src = 'images/' + filename;
+      img.alt = 'AI mobile wallpaper';
+
+      link.appendChild(img);
+      gallery.appendChild(link);
+    });
+  });
+</script>
 
 <div class="support">
   If you’ve found inspiration here, that truly means a lot to me.<br>
